@@ -42,7 +42,7 @@ func GetLists(input string) ([]int, []int) {
 	return leftList, rightList
 }
 
-func GetDiff(left, right []int) int {
+func CalcDiff(left, right []int) int {
 	slices.Sort(left)
 	slices.Sort(right)
 	var diff int
@@ -53,9 +53,27 @@ func GetDiff(left, right []int) int {
 	return diff
 }
 
+func CalcSimilarity(left, right []int) int {
+	rightFrequency := map[int]int{}
+	for _, digit := range right {
+		rightFrequency[digit] += 1
+	}
+
+	var similarity int
+	for _, digit := range left {
+		if score, ok := rightFrequency[digit]; ok {
+			similarity += digit * score
+		}
+	}
+
+	return similarity
+}
+
 func main() {
 	input := ReadInputFile(input)
 	l, r := GetLists(input)
-	diff := GetDiff(l, r)
+	diff := CalcDiff(l, r)
 	fmt.Printf("List difference: %d\n", diff)
+	similarity := CalcSimilarity(l, r)
+	fmt.Printf("Similarity score: %d\n", similarity)
 }
