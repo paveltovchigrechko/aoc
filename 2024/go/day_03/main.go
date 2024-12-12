@@ -12,16 +12,22 @@ const (
 )
 
 var pattern = regexp.MustCompile(`mul\((\d{1,3}),(\d{1,3})\)`)
+var enhancedPattern = regexp.MustCompile(`(mul\((\d{1,3}),(\d{1,3})\))|(do\(\))|(don\'t\(\))`)
 
 func extractPairs(matches [][][]byte) [][]int {
 	var pairs [][]int
 	for _, match := range matches {
-		firstNum, _ := strconv.Atoi(string(match[1]))
-		secondNum, _ := strconv.Atoi(string(match[2]))
-		pairs = append(pairs, []int{firstNum, secondNum})
+		pair := extractPair(match)
+		pairs = append(pairs, pair)
 	}
 
 	return pairs
+}
+
+func extractPair(match [][]byte) []int {
+	firstNum, _ := strconv.Atoi(string(match[1]))
+	secondNum, _ := strconv.Atoi(string(match[2]))
+	return []int{firstNum, secondNum}
 }
 
 func sumPairsProduct(pairs [][]int) int {
@@ -34,6 +40,26 @@ func sumPairsProduct(pairs [][]int) int {
 	return result
 }
 
+func enhancedPairs(matches [][][]byte) int {
+	doIsOn := true
+	result := 0
+	for _, match := range matches {
+		switch string(match[0]) {
+		case "do()":
+			doIsOn = true
+		case "don't()":
+			doIsOn = false
+		default:
+			if doIsOn {
+				firstNum, _ := strconv.Atoi(string(match[2]))
+				secondNum, _ := strconv.Atoi(string(match[3]))
+				result += firstNum * secondNum
+			}
+		}
+	}
+	return result
+}
+
 func main() {
 	data, _ := os.ReadFile(input)
 
@@ -43,4 +69,8 @@ func main() {
 	result := sumPairsProduct(pairs)
 
 	fmt.Printf("The sum of multiplications: %d\n", result)
+
+	matches = enhancedPattern.FindAllSubmatch(data, -1)
+	result = enhancedPairs(matches)
+	fmt.Printf("The sum of enhanced multiplications: %d\n", result)
 }
