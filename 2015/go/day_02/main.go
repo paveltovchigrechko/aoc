@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -38,6 +39,7 @@ func parseInput(input string) [][]int {
 func calcSurfaceArea(dimensions []int) int {
 	if len(dimensions) != 3 {
 		log.Printf("Array has %d dimensions, want 3\n", len(dimensions))
+		return 0
 	}
 
 	area := 2*dimensions[0]*dimensions[1] + 2*dimensions[1]*dimensions[2] + 2*dimensions[0]*dimensions[2]
@@ -47,6 +49,7 @@ func calcSurfaceArea(dimensions []int) int {
 func calcMinSideArea(dimensions []int) int {
 	if len(dimensions) != 3 {
 		log.Printf("Array has %d dimensions, want 3\n", len(dimensions))
+		return 0
 	}
 
 	minimalArea := dimensions[0] * dimensions[2]
@@ -61,19 +64,55 @@ func calcMinSideArea(dimensions []int) int {
 }
 
 func calcTotalArea(dimensions [][]int) int {
-	var totalArea int
+	var totalAreaFeet int
 	for _, d := range dimensions {
 		area := calcSurfaceArea(d)
 		minArea := calcMinSideArea(d)
-		totalArea += area + minArea
+		totalAreaFeet += area + minArea
 	}
 
-	return totalArea
+	return totalAreaFeet
 }
 
-func solvePuzzle(input string) int {
+func calcShortestDistance(dimensions []int) int {
+	if len(dimensions) != 3 {
+		log.Printf("Array has %d dimensions, want 3\n", len(dimensions))
+		return 0
+	}
+
+	slices.Sort(dimensions)
+	return 2*dimensions[0] + 2*dimensions[1]
+}
+
+func calcRibbonBow(dimensions []int) int {
+	if len(dimensions) != 3 {
+		log.Printf("Array has %d dimensions, want 3\n", len(dimensions))
+		return 0
+	}
+
+	return dimensions[0] * dimensions[1] * dimensions[2]
+}
+
+func calcWrappingPaper(input string) int {
 	ds := parseInput(input)
 	return calcTotalArea(ds)
+}
+
+func calcTotalRibbon(dimensions [][]int) int {
+	var totalRibbonFeet int
+
+	for _, present := range dimensions {
+		wrappingRibbon := calcShortestDistance(present)
+		bowRibbon := calcRibbonBow(present)
+		totalRibbonFeet += wrappingRibbon + bowRibbon
+	}
+
+	return totalRibbonFeet
+}
+
+func calcRibbon(input string) int {
+	ds := parseInput(input)
+	return calcTotalRibbon(ds)
 }
 
 func main() {
@@ -83,5 +122,7 @@ func main() {
 	}
 
 	input := string(data)
-	fmt.Println(solvePuzzle(input))
+	fmt.Printf("Elves need %d square feet of wrapping paper\n", calcWrappingPaper(input))
+
+	fmt.Printf("Elves need %d feet of ribbon\n", calcRibbon(input))
 }
