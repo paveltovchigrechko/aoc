@@ -13,54 +13,72 @@ const (
 	lineSep   = "\n"
 )
 
-type light interface {
-	turnOff()
-	turnOn()
-	toggle()
-	indication() int
+type Device interface {
+	GetIndication() int
+	Toggle()
+	TurnOff()
+	TurnOn()
 }
 
 type Light struct {
 	isOn bool
 }
 
-func (l *Light) toggle() {
-	l.isOn = !l.isOn
-}
-
-func (l *Light) turnOn() {
+func (l *Light) TurnOn() {
 	l.isOn = true
 }
 
-func (l *Light) turnOff() {
+func (l *Light) Toggle() {
+	l.isOn = !l.isOn
+}
+
+func (l *Light) TurnOff() {
 	l.isOn = false
 }
 
-func (l Light) indication() int {
+func (l Light) GetIndication() int {
 	if l.isOn {
 		return 1
 	}
 	return 0
 }
 
-type Grid struct {
-	lights [][]light
+type LightNew struct {
+	brightness int
 }
 
-func CreateGrid(length, width int, lightType string) *Grid {
-	grid := make([][]light, length)
+func (l *LightNew) TurnOn() {
+	l.brightness += 1
+}
 
-	switch lightType {
-	case "Light":
-		rows := make([]Light, 1000)
-	case "LightNew":
-		rows := make([]LightNew, 1000)
-	default:
-		log.Fatalf("Unknown light type: %s\n", lightType)
+func (l *LightNew) TurnOff() {
+	if l.brightness > 0 {
+		l.brightness -= 1
 	}
+}
 
-	for i := range grid {
-		grid[i], rows = rows[:width], rows[width:]
+func (l *LightNew) Toggle() {
+	l.brightness += 2
+}
+
+func (l LightNew) GetIndication() int {
+	return l.brightness
+}
+
+type Grid struct {
+	lights [][]Device
+}
+
+func CreateGridWithLights(length, width int) *Grid {
+	grid := make([][]Device, 0)
+
+	for i := 0; i <= width; i++ {
+		rows := make([]Device, 0)
+		for j := 0; j <= length; j++ {
+			l := &Light{}
+			rows = append(rows, l)
+		}
+		grid = append(grid, rows)
 	}
 
 	return &Grid{
@@ -68,11 +86,28 @@ func CreateGrid(length, width int, lightType string) *Grid {
 	}
 }
 
-func (g Grid) countLightsOnIndications() int {
+func CreateGridWithLightsNew(length, width int) *Grid {
+	grid := make([][]Device, 0)
+
+	for i := 0; i <= width; i++ {
+		rows := make([]Device, 0)
+		for j := 0; j <= length; j++ {
+			l := &LightNew{}
+			rows = append(rows, l)
+		}
+		grid = append(grid, rows)
+	}
+
+	return &Grid{
+		lights: grid,
+	}
+}
+
+func (g Grid) countIndications() int {
 	var lightsIndications int
 	for _, row := range g.lights {
 		for _, light := range row {
-			lightsIndications += light.indication()
+			lightsIndications += light.GetIndication()
 		}
 	}
 
@@ -84,11 +119,11 @@ func (g *Grid) executeInstruction(instruction *Instruction) {
 		for j := instruction.startWidth; j <= instruction.endWidth; j++ { // lights in a row
 			switch instruction.operation {
 			case "turn on":
-				g.lights[i][j].turnOn()
+				g.lights[i][j].TurnOn()
 			case "turn off":
-				g.lights[i][j].turnOff()
+				g.lights[i][j].TurnOff()
 			case "toggle":
-				g.lights[i][j].toggle()
+				g.lights[i][j].Toggle()
 			default:
 				log.Fatalf("Unknown operation %q\n", instruction.operation)
 			}
@@ -113,7 +148,6 @@ func parseInstruction(s string) *Instruction {
 		instruction = fields[0]
 		startLength, startWidth = parsePositions(fields[1])
 		endLength, endWidth = parsePositions(fields[3])
-
 	} else if len(fields) == 5 {
 		instruction = strings.Join(fields[:2], " ")
 		startLength, startWidth = parsePositions(fields[2])
@@ -150,28 +184,6 @@ func parsePositions(positions string) (int, int) {
 	return length, width
 }
 
-type LightNew struct {
-	brightness int
-}
-
-func (l *LightNew) turnOn() {
-	l.brightness += 1
-}
-
-func (l *LightNew) turnOff() {
-	if l.brightness > 0 {
-		l.brightness -= 1
-	}
-}
-
-func (l *LightNew) toggle() {
-	l.brightness += 2
-}
-
-func (l LightNew) indication() int {
-	return l.brightness
-}
-
 func main() {
 	data, err := os.ReadFile(inputFile)
 	if err != nil {
@@ -179,8 +191,8 @@ func main() {
 	}
 
 	lines := strings.Split(string(data), lineSep)
-	firstGrid := CreateGrid(1000, 1000, "Light")
-	secondGrid := CreateGrid(1000, 1000, "LightNew")
+	firstGrid := CreateGridWithLights(1000, 1000)
+	secondGrid := CreateGridWithLightsNew(1000, 1000)
 
 	for _, line := range lines {
 		ins := parseInstruction(line)
@@ -188,6 +200,6 @@ func main() {
 		secondGrid.executeInstruction(ins)
 	}
 
-	fmt.Printf("There are %d lights lit on\n", firstGrid.countLightsOnIndications())
-	fmt.Printf("The total brightness of all lights combined is %d\n", secondGrid.countLightsOnIndications())
+	fmt.Printf("There are %d lights lit on\n", firstGrid.countIndications())
+	fmt.Printf("The total brightness of all lights combined is %d\n", secondGrid.countIndications())
 }
