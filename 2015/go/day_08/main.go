@@ -21,9 +21,9 @@ func main() {
 
 	lines := bytes.Split(content, []byte("\n"))
 
-	var codeLength, memoryLength int
+	var codeLength, memoryLength, encodedLength int
 	for _, line := range lines {
-		codeLength += utf8.RuneCountInString(string(line))
+		codeLength += utf8.RuneCount(line)
 
 		inMemoryString, err := strconv.Unquote(string(line))
 		if err != nil {
@@ -32,7 +32,11 @@ func main() {
 		}
 
 		memoryLength += len(inMemoryString)
+
+		encoded := fmt.Sprintf("%q", string(line))
+		encodedLength += len(encoded)
 	}
 
 	fmt.Printf("The difference between the number of characters of code for string literals minus the number of characters in memory for the values of the strings is %d\n", codeLength-memoryLength)
+	fmt.Printf("The the total number of characters to represent the newly encoded strings minus the number of characters of code in each original string literal is %d\n", encodedLength-codeLength)
 }
